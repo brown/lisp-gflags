@@ -47,14 +47,16 @@
    (parser :reader parser
            :initarg :parser
            :type symbol
-           :documentation "Function designator that names a parser function for flag.  The parser
-takes a string as argument and must return two values, the parsed flag value and a boolean
-indicating whether the parse was successful.")
+           :documentation
+"Function designator that names a parser function for the flag.  The parser
+takes a string as argument and must return two values, the parsed flag value and
+a boolean indicating whether the parse was successful.")
    (type-specifier :reader type-specifier
                    :initarg :type-specifier
                    :type (or symbol cons)
                    :documentation "Type of the flag's value."))
-  (:documentation "A global flag that can be initialized by parsing a command line argument
+  (:documentation
+   "A global flag that can be initialized by parsing a command line argument
 string."))
 
 (defun boolean-flag-p (flag)
@@ -77,29 +79,30 @@ string."))
 ;;; Parsers that convert strings into basic types.
 
 (defun parse-boolean (string)
-  "Parses a STRING representing a boolean value.  Returns two values, the boolean and a second
-boolean indicating whether the parse was successful."
+  "Parses a STRING representing a boolean value.  Returns two values, the
+boolean and a second boolean indicating whether the parse was successful."
   (cond ((or (string= string "true") (string= string "yes")) (values t t))
         ((or (string= string "false") (string= string "no")) (values nil t))
         (t (values nil nil))))
 
 (defun parse-keyword (string)
-  "Returns a symbol in the keyword package with the same name as STRING and T to indicate that
-parsing STRING was successful."
+  "Returns a symbol in the keyword package with the same name as STRING and T to
+indicate that parsing STRING was successful."
   (values (intern (string-upcase string) (find-package :keyword)) t))
 
 (defun parse-symbol (string)
-  "Return a symbol in the current package with the same name as STRING and T to indicate that
-parsing STRING was successful."
+  "Returns a symbol in the current package with the same name as STRING and T to
+indicate that parsing STRING was successful."
   (values (intern (string-upcase string)) t))
 
 (defun parse-string (string)
-  "Returns two values, STRING and T, to indicate that the parse was (trivially) successful."
+  "Returns two values, STRING and T, to indicate that the parse was (trivially)
+successful."
   (values string t))
 
 (defun valid-float-characters-p (string float-type)
-  "Returns true if every character of STRING is one that may be produced when printing a FLOAT-TYPE
-floating point number.  Otherwise, returns false."
+  "Returns true if every character of STRING is one that may be produced when
+printing a FLOAT-TYPE floating point number.  Otherwise, returns false."
   (let ((valid-characters
           (ecase float-type
             ((single-float)
@@ -109,8 +112,9 @@ floating point number.  Otherwise, returns false."
     (every (lambda (c) (member c valid-characters)) string)))
 
 (defun parse-float (string expected-type)
-  "Parses STRING, which represents a floating point value of EXPECTED-TYPE.  Returns two values,
-the floating point number and a boolean indicating whether the parse was successful."
+  "Parses STRING, which represents a floating point value of EXPECTED-TYPE.
+Returns two values, the floating point number and a boolean indicating whether
+the parse was successful."
   (if (not (valid-float-characters-p string expected-type))
       (values nil nil)
       (with-standard-io-syntax
@@ -122,18 +126,20 @@ the floating point number and a boolean indicating whether the parse was success
               (values nil nil))))))
 
 (defun parse-single-float (string)
-  "Parses STRING, which represents a single precision floating point value.  Returns two values,
-the single-float number and a boolean indicating whether the parse was successful."
+  "Parses STRING, which represents a single precision floating point value.
+Returns two values, the single-float number and a boolean indicating whether the
+parse was successful."
   (parse-float string 'single-float))
 
 (defun parse-double-float (string)
-  "Parses STRING, which represents a double precision floating point value.  Returns two values,
-the double-float number and a boolean indicating whether the parse was successful."
+  "Parses STRING, which represents a double precision floating point value.
+Returns two values, the double-float number and a boolean indicating whether the
+parse was successful."
   (parse-float string 'double-float))
 
 (defun flag-parser (type-spec)
-  "Map TYPE-SPEC, a Lisp type specifier form, into a designator for a function that can parse the
-string representation of a TYPE-SPEC value."
+  "Maps TYPE-SPEC, a Lisp type specifier form, into a designator for a function
+that can parse the string representation of a TYPE-SPEC value."
   ;; Return a function designator instead of a function because our return value is embedded in
   ;; compiled fasl files when code uses DEFINE-FLAG.
   (cond ((subtypep type-spec 'boolean) 'parse-boolean)
@@ -175,17 +181,20 @@ string representation of a TYPE-SPEC value."
                          (help "")
                          (parser nil parser-supplied-p)
                          (documentation nil documentation-supplied-p))
-  "Defines a global variable NAME with type TYPE, holding value DEFAULT-VALUE that can be set via
-the Unix command line to \"value\" with argument \"--SELECTOR=value\" or argument \"--SELECTOR
-value\".  As a special case, flags of type \"boolean\" can additionally be set to true with
-\"--SELECTOR\" and to false with \"--noSELECTOR\".
+  "Defines a global variable NAME with type TYPE, holding value DEFAULT-VALUE
+that can be set via the Unix command line to \"value\" with argument
+\"--SELECTOR=value\" or argument \"--SELECTOR value\".  As a special case, flags
+of type \"boolean\" can additionally be set to true with \"--SELECTOR\" and to
+false with \"--noSELECTOR\".
 
-Optionally, associates a HELP string with the flag and a DOCUMENTATION string with NAME.
+Optionally, associates a HELP string with the flag and a DOCUMENTATION string
+with NAME.
 
-Values for flags defined to be of boolean, string, keyword, integer, or floating point type are
-parsed by built-in parsers.  For flags of other types supply PARSER, a function designator for a
-function that converts a string into a value of type TYPE.  The parser must return two values, the
-parsed flag value and a boolean indicating whether the parse was successful.
+Values for flags defined to be of boolean, string, keyword, integer, or floating
+point type are parsed by built-in parsers.  For flags of other types supply
+PARSER, a function designator for a function that converts a string into a value
+of type TYPE.  The parser must return two values, the parsed flag value and a
+boolean indicating whether the parse was successful.
 
 Examples:
 
@@ -220,9 +229,9 @@ Examples:
 ;;; Command line argument parsing
 
 (defun parse-command-line (arguments)
-  "Parses ARGUMENTS, a list of command line argument strings.  If a registered flag is found in
-ARGUMENTS, sets the flag's value.  Returns a copy of ARGUMENTS, but with all recognized flag
-arguments removed."
+  "Parses ARGUMENTS, a list of command line argument strings.  If a registered
+flag is found in ARGUMENTS, sets the flag's value.  Returns a copy of ARGUMENTS,
+but with all recognized flag arguments removed."
   (let ((unknown-arguments ()))
     (loop for argument = (pop arguments) then (pop arguments)
           while argument do
