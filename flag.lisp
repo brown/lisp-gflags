@@ -101,11 +101,11 @@ parsing STRING was successful."
   "Returns true if every character of STRING is one that may be produced when printing a FLOAT-TYPE
 floating point number.  Otherwise, returns false."
   (let ((valid-characters
-         (ecase float-type
-           ((single-float)
-            '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\- #\+ #\e #\E #\f #\F #\Space))
-           ((double-float)
-            '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\- #\+ #\e #\E #\d #\D #\Space)))))
+          (ecase float-type
+            ((single-float)
+             '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\- #\+ #\e #\E #\f #\F #\Space))
+            ((double-float)
+             '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\- #\+ #\e #\E #\d #\D #\Space)))))
     (every (lambda (c) (member c valid-characters)) string)))
 
 (defun parse-float (string expected-type)
@@ -211,7 +211,10 @@ Examples:
          (defparameter ,name ,default-value ,@documentation))
        (eval-when (:execute :load-toplevel)
          (register-flag ,selector
-                        (make-instance 'flag :name ',name :help ,help :parser ',parser
+                        (make-instance 'flag
+                                       :name ',name
+                                       :help ,help
+                                       :parser ',parser
                                        :type-specifier ',type))))))
 
 ;;; Command line argument parsing
@@ -251,9 +254,9 @@ arguments removed."
                       ;; Special handling for short boolean flags takes precedence over normal
                       ;; value string extraction.
                       (let ((value-string
-                             (cond (boolean-value boolean-value)
-                                   (equal-sign-index (subseq argument (1+ equal-sign-index)))
-                                   (t (pop arguments)))))
+                              (cond (boolean-value boolean-value)
+                                    (equal-sign-index (subseq argument (1+ equal-sign-index)))
+                                    (t (pop arguments)))))
                         (when (null value-string)
                           (error "flag ~S missing value" selector))
                         (multiple-value-bind (value success)

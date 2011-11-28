@@ -37,9 +37,9 @@
 (in-package #:com.google.flag-test-system)
 
 (defsystem com.google.flag-test
-  :depends-on (:com.google.flag #:hu.dwim.stefil)
+  :depends-on (com.google.flag hu.dwim.stefil)
   :components
   ((:file "flag_test")))
 
-(defmethod perform ((operation test-op) (component (eql (find-system :com.google.flag-test))))
-  (funcall (read-from-string "com.google.flag-test::test-flag")))
+(defmethod perform ((operation test-op) (component (eql (find-system 'com.google.flag-test))))
+  (funcall (read-from-string "com.google.flag-test:test-flag")))

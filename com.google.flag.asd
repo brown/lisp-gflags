@@ -36,15 +36,15 @@
 
 (in-package #:com.google.flag-system)
 
-(defsystem #:com.google.flag
+(defsystem com.google.flag
   :name "Lisp gflags"
   :description "Unix command line flag parsing."
   :long-description "An implementation of Google's gflags command line flag parsing library."
   :version "1.0"
   :author "Robert Brown"
   :license "New BSD license.  See the copyright messages in individual files."
-  :depends-on (#:com.google.base)
-  :in-order-to ((test-op (test-op :com.google.flag-test)))
+  :depends-on (com.google.base)
+  :in-order-to ((test-op (test-op com.google.flag-test)))
   :components
   ((:file "package")
    (:file "flag" :depends-on ("package"))))
