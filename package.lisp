@@ -32,7 +32,7 @@
 
 (defpackage #:com.google.flag
   (:documentation "Command line flag parsing.")
-  (:nicknames :gflag)
+  (:nicknames :gflags)
   (:use #:common-lisp #:com.google.base)
   (:export #:command-line
            #:define-flag
