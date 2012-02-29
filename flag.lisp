@@ -72,8 +72,19 @@ string."))
 
 (defun register-flag (selector flag)
   "Stores FLAG in a database of registered flags under key SELECTOR."
-  (push (cons selector flag) *registered-flags*))
+  (setf *registered-flags*
+	(cons (cons selector flag)
+	      (delete selector *registered-flags* :key #'car :test #'string=))))
 
+(defun generate-usage-string (&optional (prefix "") (suffix ""))
+  (with-output-to-string (stream)
+    (write-string prefix stream)
+    (loop with max-flag-length =
+	 (reduce #'max *registered-flags* :key (lambda (x) (length (car x))) :initial-value 0)
+       for (selector . flag) in (reverse *registered-flags*) do ;; reverse so the usage is in order of definition.
+	 (format stream "~&  --~a~v@T ~A~%" selector (- max-flag-length (length selector)) (help flag)))
+    (write-string suffix stream)))
+       
 ;;; Parsers that convert strings into basic types.
 
 (defun parse-boolean (string)
@@ -215,7 +226,9 @@ Examples:
                                        :name ',name
                                        :help ,help
                                        :parser ',parser
-                                       :type-specifier ',type))))))
+                                       :type-specifier ',type))
+	 ;; mimic return value of defparameter.
+	 ',name))))
 
 ;;; Command line argument parsing
 
@@ -275,4 +288,5 @@ arguments removed."
   "Returns the Unix command line as a list of strings."
   #+ccl (ccl::command-line-arguments)
   #+sbcl sb-ext:*posix-argv*
-  #-(or ccl sbcl) (error "not implemented"))
+  #+allegro (sys:command-line-arguments)
+  #-(or ccl sbcl allegro) (error "not implemented"))
