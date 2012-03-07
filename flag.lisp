@@ -56,8 +56,7 @@ a boolean indicating whether the parse was successful.")
                    :type (or symbol cons)
                    :documentation "Type of the flag's value."))
   (:documentation
-   "A global flag that can be initialized by parsing a command line argument
-string."))
+"A global flag that can be initialized by parsing a command line argument string."))
 
 (defun boolean-flag-p (flag)
   "Returns true if FLAG is a boolean flag; otherwise, returns false."
