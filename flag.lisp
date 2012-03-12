@@ -80,9 +80,16 @@ string."))
   (with-output-to-string (stream)
     (write-string prefix stream)
     (loop with max-flag-length =
-	 (reduce #'max *registered-flags* :key (lambda (x) (length (car x))) :initial-value 0)
+	 (reduce #'max *registered-flags* 
+		 :key (lambda (x)
+			(destructuring-bind (selector . flag) x
+			  (+ (if (boolean-flag-p flag) 2 0)
+			     (length selector))))
+		 :initial-value 0)
        for (selector . flag) in (reverse *registered-flags*) do ;; reverse so the usage is in order of definition.
-	 (format stream "~&  --~a~v@T ~A~%" selector (- max-flag-length (length selector)) (help flag)))
+	 (format stream "~&  --~a~v@T ~A~%" selector (- max-flag-length (length selector)) (help flag))
+	 (when (boolean-flag-p flag) ;; handle the --no<selector> for booleans.
+	   (format stream "  --no~a~v@T~%"  selector (+ 2 (- max-flag-length (length selector))))))
     (write-string suffix stream)))
        
 ;;; Parsers that convert strings into basic types.
