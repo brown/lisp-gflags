@@ -93,10 +93,10 @@
 (deftest symbol-flag ()
   (is (eq *symbol-flag* :bar))
   (let ((*symbol-flag* *symbol-flag*))
-    (parse-flags '("--symflag" "up"))
-    (is (eq *symbol-flag* 'up))
-    (parse-flags '("--symflag=down"))
-    (is (eq *symbol-flag* 'down))))
+    (parse-flags '("--symflag" "com.google.flag:define-flag"))
+    (is (eq *symbol-flag* 'com.google.flag:define-flag))
+    (parse-flags '("--symflag=com.google.flag-test::unexported-symbol"))
+    (is (eq *symbol-flag* 'com.google.flag-test::unexported-symbol))))
 
 (define-flag *string-flag* :default-value "foo" :selector "stringflag" :type string)
 

@@ -90,9 +90,17 @@ indicate that parsing STRING was successful."
   (values (intern (string-upcase string) (find-package :keyword)) t))
 
 (defun parse-symbol (string)
-  "Returns a symbol in the current package with the same name as STRING and T to
-indicate that parsing STRING was successful."
-  (values (intern (string-upcase string)) t))
+  "When STRING represents a package-qualified symbol in lower case, returns two
+values, the symbol and T.  Otherwise, returns NIL and NIL."
+  (let ((first-colon (position #\: string))
+        (last-colon (position #\: string :from-end t)))
+    (unless (and first-colon
+                 (or (= first-colon last-colon) (= (1+ first-colon) last-colon)))
+      (return-from parse-symbol (values nil nil)))
+    (let ((package (find-package (string-upcase (subseq string 0 first-colon)))))
+      (if package
+          (values (intern (string-upcase (subseq string (1+ last-colon))) package) t)
+          (values nil nil)))))
 
 (defun parse-string (string)
   "Returns two values, STRING and T, to indicate that the parse was (trivially)
