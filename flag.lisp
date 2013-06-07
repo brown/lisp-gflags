@@ -124,13 +124,13 @@ Returns two values, the floating point number and a boolean indicating whether
 the parse was successful."
   (if (not (valid-float-characters-p string expected-type))
       (values nil nil)
-      (with-standard-io-syntax
-        (let* ((*read-default-float-format* expected-type)
-               (*read-eval* nil)
-               (float (ignore-errors (read-from-string string))))
-          (if (typep float expected-type)
-              (values float t)
-              (values nil nil))))))
+      (let ((float (with-standard-io-syntax
+                     (let ((*read-default-float-format* expected-type)
+                           (*read-eval* nil))
+                       (ignore-errors (read-from-string string))))))
+        (if (typep float expected-type)
+            (values float t)
+            (values nil nil)))))
 
 (defun parse-single-float (string)
   "Parses STRING, which represents a single precision floating point value.
@@ -239,53 +239,57 @@ Examples:
   "Parses ARGUMENTS, a list of command line argument strings.  If a registered
 flag is found in ARGUMENTS, sets the flag's value.  Returns a copy of ARGUMENTS,
 but with all recognized flag arguments removed."
-  (let ((unknown-arguments ()))
+  (let ((unrecognized-arguments ()))
     (loop for argument = (pop arguments) then (pop arguments)
           while argument do
-            (if (not (prefixp "--" argument))
-                ;; Google flags must start with "--".
-                (push argument unknown-arguments)
-                ;; Flag values may be set with one argument, "--flag=value" or by passing two
-                ;; separate arguments, "--flag value".
-                (let* ((equal-sign-index (position #\= argument))
-                       (selector (subseq argument 2 equal-sign-index))
-                       (flag (find-flag selector))
-                       (boolean-value nil))
-                  ;; Handle the short forms of boolean flags.  If "boolflag" is a registered
-                  ;; boolean flag, then the argument "--boolflag" sets it true and "--noboolflag"
-                  ;; sets it false.
-                  (unless equal-sign-index
-                    (if (and flag (boolean-flag-p flag))
-                        (setf boolean-value "true")
-                        (when (prefixp "no" selector)
-                          (let* ((boolean-selector (subseq selector 2))
-                                 (boolean-flag (find-flag boolean-selector)))
-                            (when (and boolean-flag (boolean-flag-p boolean-flag))
-                              (setf selector boolean-selector)
-                              (setf flag boolean-flag)
-                              (setf boolean-value "false"))))))
-                  (if (not flag)
-                      ;; An unregistered flag.
-                      (push argument unknown-arguments)
-                      ;; Special handling for short boolean flags takes precedence over normal
-                      ;; value string extraction.
-                      (let ((value-string
-                              (cond (boolean-value boolean-value)
-                                    (equal-sign-index (subseq argument (1+ equal-sign-index)))
-                                    (t (pop arguments)))))
-                        (when (null value-string)
-                          (error "flag ~S missing value" selector))
-                        (multiple-value-bind (value success)
-                            (funcall (parser flag) value-string)
-                          (unless success
-                            (error "cannot convert ~S into a value for flag ~S"
-                                   value-string selector))
-                          (let ((type (type-specifier flag)))
-                            (unless (typep value type)
-                              (error "value ~S for flag ~S is not of type ~S"
-                                     value selector type)))
-                          (setf (symbol-value (name flag)) value)))))))
-    (reverse unknown-arguments)))
+            (cond ((string= argument "--")
+                   ;; The special flag "--" marks the end of parsed arguments.
+                   (return (append (reverse unrecognized-arguments) arguments)))
+                  ((not (prefixp "--" argument))
+                   ;; Google flags must start with "--".
+                   (push argument unrecognized-arguments))
+                  (t
+                   ;; Flag values may be set with one argument, "--flag=value" or by passing two
+                   ;; separate arguments, "--flag value".
+                   (let* ((equal-sign-index (position #\= argument))
+                          (selector (subseq argument 2 equal-sign-index))
+                          (flag (find-flag selector))
+                          (boolean-value nil))
+                     ;; Handle the short forms of boolean flags.  If "boolflag" is a registered
+                     ;; boolean flag, then the argument "--boolflag" sets it true and
+                     ;; "--noboolflag" sets it false.
+                     (unless equal-sign-index
+                       (if (and flag (boolean-flag-p flag))
+                           (setf boolean-value "true")
+                           (when (prefixp "no" selector)
+                             (let* ((boolean-selector (subseq selector 2))
+                                    (boolean-flag (find-flag boolean-selector)))
+                               (when (and boolean-flag (boolean-flag-p boolean-flag))
+                                 (setf selector boolean-selector)
+                                 (setf flag boolean-flag)
+                                 (setf boolean-value "false"))))))
+                     (if (not flag)
+                         ;; An unregistered flag.
+                         (push argument unrecognized-arguments)
+                         ;; Special handling for short boolean flags takes precedence over normal
+                         ;; value string extraction.
+                         (let ((value-string
+                                 (cond (boolean-value boolean-value)
+                                       (equal-sign-index (subseq argument (1+ equal-sign-index)))
+                                       (t (pop arguments)))))
+                           (when (null value-string)
+                             (error "flag ~S missing value" selector))
+                           (multiple-value-bind (value success)
+                               (funcall (parser flag) value-string)
+                             (unless success
+                               (error "cannot convert ~S into a value for flag ~S"
+                                      value-string selector))
+                             (let ((type (type-specifier flag)))
+                               (unless (typep value type)
+                                 (error "value ~S for flag ~S is not of type ~S"
+                                        value selector type)))
+                             (setf (symbol-value (name flag)) value)))))))
+            finally (return (reverse unrecognized-arguments)))))
 
 (defun command-line ()
   "Returns the Unix command line as a list of strings."

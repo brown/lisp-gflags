@@ -48,12 +48,15 @@
 
 (in-suite test-flag)
 
-(defconst +before-junk+ '("before" "-f" "-" "--" "--no" ""))
-(defconst +after-junk+ '("after" "--" "" "--foo"))
-(defconst +junk+ (append +before-junk+ +after-junk+))
+(defconst +before+ '("before" "-a" "-" "--no" ""))
+(defconst +after+ '("after" "-b" "-" "--no" ""))
+(defconst +skip+ '("--boolflag" "--keyflag=a" "--symflag=b" "--stringflag=c"
+                   "--intflag=d" "--sfflag=e" "--dfflag=f" "--color=g"))
+(defconst +expected-unparsed-flags+ (append +before+ +after+ +skip+))
 
 (defun parse-flags (arguments)
-  (is (equal (parse-command-line (append +before-junk+ arguments +after-junk+)) +junk+)))
+  (let ((command-line (append +before+ arguments +after+ '("--") +skip+)))
+    (is (equal (parse-command-line command-line) +expected-unparsed-flags+))))
 
 (define-flag *boolean-flag*
     :default-value nil
