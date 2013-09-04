@@ -28,14 +28,6 @@
 
 ;;;; Author: brown@google.com (Robert Brown)
 
-(in-package #:common-lisp-user)
-
-(defpackage #:com.google.flag-test-system
-  (:documentation "System definition for testing the COM.GOOGLE.FLAG package.")
-  (:use #:common-lisp #:asdf))
-
-(in-package #:com.google.flag-test-system)
-
 (defsystem com.google.flag-test
   :depends-on (com.google.flag hu.dwim.stefil)
   :components

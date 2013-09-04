@@ -28,14 +28,6 @@
 
 ;;;; Author: brown@google.com (Robert Brown)
 
-(in-package #:common-lisp-user)
-
-(defpackage #:com.google.flag-system
-  (:documentation "System definition for package COM.GOOGLE.FLAG.")
-  (:use #:common-lisp #:asdf))
-
-(in-package #:com.google.flag-system)
-
 (defsystem com.google.flag
   :name "Lisp gflags"
   :description "Unix command line flag parsing."
