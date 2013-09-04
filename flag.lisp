@@ -188,11 +188,10 @@ that can parse the string representation of a TYPE-SPEC value."
                          (help "")
                          (parser nil parser-supplied-p)
                          (documentation nil documentation-supplied-p))
-  "Defines a global variable NAME with type TYPE, holding value DEFAULT-VALUE
-that can be set via the Unix command line to \"value\" with argument
-\"--SELECTOR=value\" or argument \"--SELECTOR value\".  As a special case, flags
-of type \"boolean\" can additionally be set to true with \"--SELECTOR\" and to
-false with \"--noSELECTOR\".
+  "Defines a global variable NAME of type TYPE, holding value DEFAULT-VALUE,
+that can be set via the Unix command line to \"value\" with argument \"--SELECTOR=value\"
+or arguments \"--SELECTOR value\".  As a special case, flags of type \"boolean\" can
+additionally be set to true with \"--SELECTOR\" and to false with \"--noSELECTOR\".
 
 Optionally, associates a HELP string with the flag and a DOCUMENTATION string
 with NAME.
@@ -205,18 +204,19 @@ boolean indicating whether the parse was successful.
 
 Examples:
 
-    (define-flag *debug-flag*
+    (define-flag *debug-mode*
       :default-value nil
       :selector \"debug\"
       :type boolean
       :help \"Turn on debugging mode?\"
       :documentation \"Is debugging mode turned on?\")
 
-    (define-flag *ip-address-flag*
+    (define-flag *ip-address*
       :default-value (make-instance 'ip-address ...)
-      :selector \"ip-address\"
+      :selector \"ip_address\"
       :type (satisfies ip-address-p)
-      :help \"An internet protocol address\")"
+      :parser ip-address-parser
+      :help \"An internet protocol address.\")"
   (validate-arguments name default-value-supplied-p selector-supplied-p type-supplied-p
                       selector (eq type 'boolean))
   (let ((documentation (when documentation-supplied-p (list documentation)))
