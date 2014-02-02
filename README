@@ -13,14 +13,15 @@ line.
 
     (define-flag *debug-flag*
       :default-value nil
-      :selector \"debug\"
+      :selector "debug"
       :type boolean
-      :help \"Turn on debugging mode?\"
-      :documentation \"Is debugging mode turned on?\")
+      :help "Turn on debugging mode?"
+      :documentation "Is debugging mode turned on?")
 
 If the command line contains "--debug" or "--debug=true", then *DEBUG-FLAG* is
 set to T.  Otherwise, it defaults to NIL.
 
-The function PARSE-COMMAND-LINE is used to parse the command line.
+The function PARSE-COMMAND-LINE is used to parse the command line and initialize
+flags.  It returns the original command line with all recognized flags removed.
 
-The file flag.test contains more examples.
+The file flag_test.lisp contains many examples.
