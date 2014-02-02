@@ -74,12 +74,20 @@
     (setf *boolean-flag* nil)
     (parse-flags '("--boolflag=true"))
     (is *boolean-flag*)
+    (setf *boolean-flag* nil)
+    (parse-flags '("--boolflag=yes"))
+    (is *boolean-flag*)
     (setf *boolean-flag* t)
     (parse-flags '("--noboolflag"))
     (is (not *boolean-flag*))
     (setf *boolean-flag* t)
+    (parse-flags '("--boolflag=false"))
+    (is (not *boolean-flag*))
+    (setf *boolean-flag* t)
     (parse-flags '("--boolflag=no"))
-    (is (not *boolean-flag*))))
+    (is (not *boolean-flag*))
+    (signals error (parse-flags '("--boolflag=")))
+    (signals error (parse-flags '("--boolflag=foobar")))))
 
 (define-flag *keyword-flag* :default-value :foo :selector "keyflag" :type keyword)
 
@@ -89,7 +97,9 @@
     (parse-flags '("--keyflag" "dog"))
     (is (eq *keyword-flag* :dog))
     (parse-flags '("--keyflag=cat"))
-    (is (eq *keyword-flag* :cat))))
+    (is (eq *keyword-flag* :cat))
+    (parse-flags '("--keyflag="))
+    (is (eq *keyword-flag* :||))))
 
 (define-flag *symbol-flag* :default-value :bar :selector "symflag" :type symbol)
 
@@ -99,7 +109,10 @@
     (parse-flags '("--symflag" "com.google.flag:define-flag"))
     (is (eq *symbol-flag* 'com.google.flag:define-flag))
     (parse-flags '("--symflag=com.google.flag-test::unexported-symbol"))
-    (is (eq *symbol-flag* 'com.google.flag-test::unexported-symbol))))
+    (is (eq *symbol-flag* 'com.google.flag-test::unexported-symbol))
+    (signals error (parse-flags '("--symflag=")))
+    (signals error (parse-flags '("--symflag" ":bad-colons")))
+    (signals error (parse-flags '("--symflag" "bad-package:foo")))))
 
 (define-flag *string-flag* :default-value "foo" :selector "stringflag" :type string)
 
@@ -109,7 +122,9 @@
     (parse-flags '("--stringflag" "dog"))
     (is (string= *string-flag* "dog"))
     (parse-flags '("--stringflag=cat"))
-    (is (string= *string-flag* "cat"))))
+    (is (string= *string-flag* "cat"))
+    (parse-flags '("--stringflag="))
+    (is (string= *string-flag* ""))))
 
 (define-flag *integer-flag* :default-value 10  :selector "intflag" :type (integer -10 10))
 
@@ -119,7 +134,9 @@
     (parse-flags '("--intflag" "-2"))
     (is (= *integer-flag* -2))
     (parse-flags '("--intflag=3"))
-    (is (= *integer-flag* 3))))
+    (is (= *integer-flag* 3))
+    (signals error (parse-flags '("--intflag=")))
+    (signals error (parse-flags '("--intflag=123x456")))))
 
 (define-flag *single-float-flag* :default-value 3.14f0 :selector "sfflag" :type single-float)
 
@@ -129,7 +146,10 @@
     (parse-flags '("--sfflag" "0.42"))
     (is (= *single-float-flag* 0.42f0))
     (parse-flags '("--sfflag=-.42e-2"))
-    (is (= *single-float-flag* -.42f-2))))
+    (is (= *single-float-flag* -.42f-2))
+    (signals error (parse-flags '("--sfflag=")))
+    (signals error (parse-flags '("--sfflag=-.42x-2")))
+    (signals error (parse-flags '("--sfflag=-.42d-2")))))
 
 (define-flag *double-float-flag*
     :default-value 0.12345d0
@@ -142,14 +162,18 @@
     (parse-flags '("--dfflag" "0.42"))
     (is (= *double-float-flag* 0.42d0))
     (parse-flags '("--dfflag=-.42E-2"))
-    (is (= *double-float-flag* -0.42d-2))))
+    (is (= *double-float-flag* -0.42d-2))
+    (signals error (parse-flags '("--dfflag=")))
+    (signals error (parse-flags '("--dfflag=-.42x-2")))
+    (signals error (parse-flags '("--dfflag=-.42s-2")))))
 
 (deftype color () '(member :red :green :blue))
 
 (defun color-parser (string)
   (let ((color (cond ((string= string "red") :red)
                      ((string= string "green") :green)
-                     ((string= string "blue") :blue))))
+                     ((string= string "blue") :blue)
+                     ((string= string "orange") :orange))))
     (if color
         (values color t)
         (values nil nil))))
@@ -160,4 +184,43 @@
   (is (eq *color* :red))
   (let ((*color* *color*))
     (parse-flags '("--color" "blue"))
-    (is (eq *color* :blue))))
+    (is (eq *color* :blue))
+    (signals error (parse-flags '("--color=black")))
+    (signals error (parse-flags '("--color=orange")))))
+
+(deftest syntax-errors ()
+  (flet ((signals-error (form)
+           (signals error (macroexpand-1 form))))
+    (signals-error '(define-flag "s" :default-value t :selector "s" :type symbol))
+    (signals-error '(define-flag *s* :selector "s" :type symbol))
+    (signals-error '(define-flag *s* :default-value t :type symbol))
+    (signals-error '(define-flag *s* :default-value t :selector s :type symbol))
+    (signals-error '(define-flag *s* :default-value t :selector "" :type symbol))
+    (signals-error '(define-flag *s* :default-value t :selector "s"))
+    (signals-error '(define-flag *s* :default-value t :selector "s" :type "symbol"))
+    (signals-error '(define-flag *s* :default-value t :selector "s" :type symbol :help h))
+    (signals-error '(define-flag *s* :default-value t :selector "s" :type symbol :parser "p"))
+    (signals-error '(define-flag *s* :default-value t :selector "s" :type symbol
+                     :documentation 'd))
+    (signals-error '(define-flag *s* :default-value t :selector "s" :type symbol :parser nil))
+    (signals-error '(define-flag *s* :default-value t :selector "s" :type vector))))
+
+(define-flag *no-go*
+  :default-value nil
+  :selector "nogo"
+  :type boolean)
+
+(define-flag *rth*
+  :default-value nil
+  :selector "rth"
+  :type boolean)
+
+(deftest semantic-errors ()
+  (flet ((signals-error (form)
+           (signals error (eval form))))
+    (signals-error '(define-flag *b* :default-value nil :selector "boolflag" :type boolean))
+    (signals-error '(define-flag *go* :default-value nil :selector "go" :type boolean))
+    (signals-error '(define-flag *north* :default-value nil :selector "north" :type symbol))))
+
+(deftest return-value ()
+  (eq '*retval* (eval '(define-flag *retval* :default-value nil :selector "retval" :type symbol))))
