@@ -60,6 +60,7 @@ value and a boolean indicating whether the parse was successful.")
 
 (defun boolean-flag-p (flag)
   "Returns true if FLAG is a boolean flag; otherwise, returns false."
+  (declare (type flag flag))
   (eq (type-specifier flag) 'boolean))
 
 ;;; A database of registered flags
@@ -69,12 +70,15 @@ value and a boolean indicating whether the parse was successful.")
 
 (defun find-flag (selector)
   "Searches for the registered flag corresponding to the SELECTOR string."
+  (declare (type string selector))
   (cdr (assoc selector *registered-flags* :test #'string=)))
 
 (defun validate-flag (flag selector)
   "Validates whether a FLAG associated with SELECTOR can be registered without
 causing any flag parsing problems."
   ;; The flag can be redefined so long as its variable does not change.
+  (declare (type flag flag)
+           (type string selector))
   (let ((old-flag (find-flag selector)))
     (when (and old-flag (not (eq (flag-variable old-flag) (flag-variable flag))))
       (error "a flag with selector ~S is already associated with variable ~S"
@@ -96,6 +100,8 @@ causing any flag parsing problems."
 
 (defun register-flag (flag selector)
   "Stores FLAG in a database of registered flags, indexing it by SELECTOR."
+  (declare (type flag flag)
+           (type string selector))
   (validate-flag flag selector)
   (when (find-flag selector)
     (setf *registered-flags* (remove selector *registered-flags* :key #'car :test #'string=)))
@@ -106,6 +112,7 @@ causing any flag parsing problems."
 (defun parse-boolean (string)
   "Parses a STRING representing a boolean value.  Returns two values, the
 boolean and a second boolean indicating whether the parse was successful."
+  (declare (type string string))
   (cond ((or (string= string "true") (string= string "yes")) (values t t))
         ((or (string= string "false") (string= string "no")) (values nil t))
         (t (values nil nil))))
@@ -113,14 +120,19 @@ boolean and a second boolean indicating whether the parse was successful."
 (defun parse-keyword (string)
   "Returns a symbol in the keyword package with the same name as STRING and T to
 indicate that parsing STRING was successful."
+  (declare (type string string))
   (values (intern (string-upcase string) (find-package :keyword)) t))
 
 (defun parse-symbol (string)
   "If STRING, converted to upper case, represents a package-qualified symbol,
 returns two values, the symbol and T.  Otherwise, returns NIL and NIL."
+  (declare (type string string))
   (let ((first-colon (position #\: string))
         (last-colon (position #\: string :from-end t)))
     (unless (and first-colon
+                 ;; Require a non-empty package name.  Most Lisps return NIL for (find-package ""),
+                 ;; but Allegro returns the keyword package.
+                 (plusp first-colon)
                  (or (= first-colon last-colon) (= (1+ first-colon) last-colon)))
       (return-from parse-symbol (values nil nil)))
     (let ((package (find-package (string-upcase (subseq string 0 first-colon)))))
@@ -131,23 +143,26 @@ returns two values, the symbol and T.  Otherwise, returns NIL and NIL."
 (defun parse-string (string)
   "Returns two values, STRING and T, to indicate that the parse was (trivially)
 successful."
+  (declare (type string string))
   (values string t))
 
 (defun valid-float-characters-p (string float-type)
   "Returns true if every character of STRING is one that may be produced when
 printing a FLOAT-TYPE floating point number.  Otherwise, returns false."
+  (declare (type string string)
+           (type (member single-float double-float) float-type))
   (let ((valid-characters
           (ecase float-type
-            ((single-float)
-             '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\- #\+ #\e #\E #\f #\F #\Space))
-            ((double-float)
-             '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\- #\+ #\e #\E #\d #\D #\Space)))))
-    (every (lambda (c) (member c valid-characters)) string)))
+            ((single-float) "0123456789.-+eEfF")
+            ((double-float) "0123456789.-+eEdD"))))
+    (every (lambda (c) (position c valid-characters)) string)))
 
 (defun parse-float (string expected-type)
   "Parses STRING, which represents a floating point value of EXPECTED-TYPE.
 Returns two values, the floating point number and a boolean indicating whether
 the parse was successful."
+  (declare (type string string)
+           (type (member single-float double-float) expected-type))
   (if (not (valid-float-characters-p string expected-type))
       (values nil nil)
       (let ((float (with-standard-io-syntax
@@ -162,27 +177,30 @@ the parse was successful."
   "Parses STRING, which represents a single precision floating point value.
 Returns two values, the single-float number and a boolean indicating whether
 the parse was successful."
+  (declare (type string string))
   (parse-float string 'single-float))
 
 (defun parse-double-float (string)
   "Parses STRING, which represents a double precision floating point value.
 Returns two values, the double-float number and a boolean indicating whether
 the parse was successful."
+  (declare (type string string))
   (parse-float string 'double-float))
 
-(defun flag-parser (type-spec)
-  "Maps TYPE-SPEC, a Lisp type specifier form, into a designator for a function
-that can parse the string representation of a TYPE-SPEC value.  Returns NIL
-when there is no predefined parser for TYPE-SPEC."
+(defun flag-parser (type-specifier)
+  "Maps a Lisp TYPE-SPECIFIER form, into a designator for a function that can
+parse the string representation of a TYPE-SPECIFIER value.  Returns NIL when
+there is no predefined parser for TYPE-SPECIFIER."
+  (declare (type (or symbol cons) type-specifier))
   ;; Return a symbol because our return value is embedded in the compiled FASLs of files that
   ;; contain a DEFINE-FLAG form.  Functions cannot be embedded in FASLs, but symbols can.
-  (cond ((subtypep type-spec 'boolean) 'parse-boolean)
-        ((subtypep type-spec 'keyword) 'parse-keyword)
-        ((subtypep type-spec 'symbol) 'parse-symbol)
-        ((subtypep type-spec 'string) 'parse-string)
-        ((subtypep type-spec 'integer) 'parse-integer)
-        ((subtypep type-spec 'single-float) 'parse-single-float)
-        ((subtypep type-spec 'double-float) 'parse-double-float)))
+  (cond ((subtypep type-specifier 'boolean) 'parse-boolean)
+        ((subtypep type-specifier 'keyword) 'parse-keyword)
+        ((subtypep type-specifier 'symbol) 'parse-symbol)
+        ((subtypep type-specifier 'string) 'parse-string)
+        ((subtypep type-specifier 'integer) 'parse-integer)
+        ((subtypep type-specifier 'single-float) 'parse-single-float)
+        ((subtypep type-specifier 'double-float) 'parse-double-float)))
 
 ;;; Flag defining macro.
 
@@ -260,56 +278,59 @@ Examples:
   "Parses ARGUMENTS, a list of command line argument strings.  If a registered
 flag is found in ARGUMENTS, sets the flag's value.  Returns a copy of
 ARGUMENTS, but with all recognized flag arguments removed."
-  (let ((unrecognized-arguments ()))
-    (loop for argument = (pop arguments) then (pop arguments)
-          while argument do
-            (cond ((string= argument "--")
-                   ;; The special flag "--" marks the end of parsed arguments.
-                   (return (append (reverse unrecognized-arguments) arguments)))
-                  ((not (prefixp "--" argument))
-                   ;; Google flags must start with "--".
-                   (push argument unrecognized-arguments))
-                  (t
-                   ;; Flag values may be set with one argument, "--flag=value" or by passing two
-                   ;; separate arguments, "--flag value".
-                   (let* ((equal-sign-index (position #\= argument))
-                          (selector (subseq argument 2 equal-sign-index))
-                          (flag (find-flag selector))
-                          (boolean-value nil))
-                     ;; Handle the short forms of boolean flags.  If "boolflag" is a registered
-                     ;; boolean flag, then the argument "--boolflag" sets it true and
-                     ;; "--noboolflag" sets it false.
-                     (unless equal-sign-index
-                       (if (and flag (boolean-flag-p flag))
-                           (setf boolean-value "true")
-                           (when (prefixp "no" selector)
-                             (let* ((boolean-selector (subseq selector 2))
-                                    (boolean-flag (find-flag boolean-selector)))
-                               (when (and boolean-flag (boolean-flag-p boolean-flag))
-                                 (setf selector boolean-selector)
-                                 (setf flag boolean-flag)
-                                 (setf boolean-value "false"))))))
-                     (if (not flag)
-                         ;; An unregistered flag.
-                         (push argument unrecognized-arguments)
-                         ;; Special handling for short boolean flags takes precedence over normal
-                         ;; value string extraction.
-                         (let ((value-string
-                                 (cond (boolean-value boolean-value)
-                                       (equal-sign-index (subseq argument (1+ equal-sign-index)))
-                                       (t (pop arguments)))))
-                           (unless value-string (error "flag selector ~S missing value" selector))
-                           (multiple-value-bind (value success)
-                               (funcall (parser flag) value-string)
-                             (unless success
-                               (error "cannot convert ~S into a value for flag ~S"
-                                      value-string selector))
-                             (let ((type (type-specifier flag)))
-                               (unless (typep value type)
-                                 (error "value ~S for flag ~S is not of type ~S"
-                                        value selector type)))
-                             (setf (symbol-value (flag-variable flag)) value)))))))
-            finally (return (reverse unrecognized-arguments)))))
+  (declare (type list arguments))
+  (let ((unrecognized-arguments '()))
+    (loop while arguments do
+      (let ((argument (pop arguments)))
+        (declare (type string argument))
+        (cond ((string= argument "--")
+               ;; The special flag "--" marks the end of parsed arguments.
+               (return-from parse-command-line
+                 (append (reverse unrecognized-arguments) arguments)))
+              ((not (prefixp "--" argument))
+               ;; Google flags must start with "--".
+               (push argument unrecognized-arguments))
+              (t
+               ;; Flag values may be set with one argument, "--flag=value" or by passing two
+               ;; separate arguments, "--flag value".
+               (let* ((equal-sign-index (position #\= argument))
+                      (selector (subseq argument 2 equal-sign-index))
+                      (flag (find-flag selector))
+                      (boolean-value nil))
+                 (declare (type string selector))
+                 ;; Handle the short forms of boolean flags.  If "boolflag" is a registered
+                 ;; boolean flag, then the argument "--boolflag" sets it true and
+                 ;; "--noboolflag" sets it false.
+                 (unless equal-sign-index
+                   (if (and flag (boolean-flag-p flag))
+                       (setf boolean-value "true")
+                       (when (prefixp "no" selector)
+                         (let* ((boolean-selector (subseq selector 2))
+                                (boolean-flag (find-flag boolean-selector)))
+                           (when (and boolean-flag (boolean-flag-p boolean-flag))
+                             (setf selector boolean-selector)
+                             (setf flag boolean-flag)
+                             (setf boolean-value "false"))))))
+                 (if (not flag)
+                     ;; An unregistered flag.
+                     (push argument unrecognized-arguments)
+                     ;; Special handling for short boolean flags takes precedence over normal
+                     ;; value string extraction.
+                     (let ((value-string
+                             (cond (boolean-value boolean-value)
+                                   (equal-sign-index (subseq argument (1+ equal-sign-index)))
+                                   (t (pop arguments)))))
+                       (unless value-string (error "flag selector ~S missing value" selector))
+                       (multiple-value-bind (value success)
+                           (funcall (fdefinition (parser flag)) value-string)
+                         (unless success
+                           (error "cannot convert ~S into a value for flag ~S"
+                                  value-string selector))
+                         (let ((type (type-specifier flag)))
+                           (unless (typep value type)
+                             (error "value ~S for flag ~S is not of type ~S" value selector type)))
+                         (setf (symbol-value (flag-variable flag)) value)))))))))
+    (reverse unrecognized-arguments)))
 
 (defun command-line ()
   "Returns the Unix command line as a list of strings."
