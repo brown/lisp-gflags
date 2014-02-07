@@ -113,8 +113,8 @@ causing any flag parsing problems."
   "Parses a STRING representing a boolean value.  Returns two values, the
 boolean and a second boolean indicating whether the parse was successful."
   (declare (type string string))
-  (cond ((or (string= string "true") (string= string "yes")) (values t t))
-        ((or (string= string "false") (string= string "no")) (values nil t))
+  (cond ((string= string "true") (values t t))
+        ((string= string "false") (values nil t))
         (t (values nil nil))))
 
 (defun parse-keyword (string)
@@ -298,9 +298,10 @@ ARGUMENTS, but with all recognized flag arguments removed."
                       (flag (find-flag selector))
                       (boolean-value nil))
                  (declare (type string selector))
-                 ;; Handle the short forms of boolean flags.  If "boolflag" is a registered
-                 ;; boolean flag, then the argument "--boolflag" sets it true and
-                 ;; "--noboolflag" sets it false.
+                 ;; Handle the short forms of boolean flags.  If "boolflag" is a registered boolean
+                 ;; flag, then the argument "--boolflag" sets it true and "--noboolflag" sets it
+                 ;; false.  If either of these forms is used, the following argument must be
+                 ;; another flag to avoid the "--boolflag false" trap.
                  (unless equal-sign-index
                    (if (and flag (boolean-flag-p flag))
                        (setf boolean-value "true")
@@ -310,7 +311,9 @@ ARGUMENTS, but with all recognized flag arguments removed."
                            (when (and boolean-flag (boolean-flag-p boolean-flag))
                              (setf selector boolean-selector)
                              (setf flag boolean-flag)
-                             (setf boolean-value "false"))))))
+                             (setf boolean-value "false")))))
+                   (when (and boolean-value arguments (not (prefixp "--" (first arguments))))
+                     (error "short form of boolean flag must be followed by another flag")))
                  (if (not flag)
                      ;; An unregistered flag.
                      (push argument unrecognized-arguments)

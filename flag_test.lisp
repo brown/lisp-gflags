@@ -49,7 +49,7 @@
 (in-suite test-flag)
 
 (defconst +before+ '("before" "-a" "-" "--no" ""))
-(defconst +after+ '("after" "-b" "-" "--no" ""))
+(defconst +after+ '("--after" "-b" "-" "--no" ""))
 (defconst +skip+ '("--boolflag" "--keyflag=a" "--symflag=b" "--stringflag=c"
                    "--intflag=d" "--sfflag=e" "--dfflag=f" "--color=g"))
 (defconst +expected-unparsed-flags+ (append +before+ +after+ +skip+))
@@ -59,35 +59,42 @@
     (is (equal (parse-command-line command-line) +expected-unparsed-flags+))))
 
 (define-flag *boolean-flag*
-    :default-value nil
-    :selector "boolflag"
-    :type boolean
-    :help "A boolean flag."
-    :documentation "Boolean flag used for testing.")
+  :default-value nil
+  :selector "boolflag"
+  :type boolean
+  :help "A boolean flag."
+  :documentation "Boolean flag used for testing.")
 
 (deftest boolean-flag ()
   (is (not *boolean-flag*))
   (is (string= (documentation '*boolean-flag* 'variable) "Boolean flag used for testing."))
   (let ((*boolean-flag* *boolean-flag*))
-    (parse-flags '("--boolflag"))
-    (is *boolean-flag*)
-    (setf *boolean-flag* nil)
-    (parse-flags '("--boolflag=true"))
-    (is *boolean-flag*)
-    (setf *boolean-flag* nil)
-    (parse-flags '("--boolflag=yes"))
-    (is *boolean-flag*)
-    (setf *boolean-flag* t)
-    (parse-flags '("--noboolflag"))
-    (is (not *boolean-flag*))
-    (setf *boolean-flag* t)
-    (parse-flags '("--boolflag=false"))
-    (is (not *boolean-flag*))
-    (setf *boolean-flag* t)
-    (parse-flags '("--boolflag=no"))
-    (is (not *boolean-flag*))
+    (flet ((test (expected flags)
+             (setf *boolean-flag* (not expected))
+             (parse-flags flags)
+             (if expected (is *boolean-flag*) (is (not *boolean-flag*)))))
+      (test t '("--boolflag"))
+      (test t '("--boolflag=true"))
+      (test nil '("--noboolflag"))
+      (test nil '("--boolflag=false")))
+    (flet ((test (expected flags)
+             (setf *boolean-flag* (not expected))
+             (parse-command-line flags)
+             (if expected (is *boolean-flag*) (is (not *boolean-flag*)))))
+      ;; Boolean short forms should work as the last argument.
+      (test t '("--boolflag"))
+      (test nil '("--noboolflag")))
+
+    ;; The negative short form with an argument should be skipped.
+    (let ((flags '("--noboolflag=true")))
+      (equal (parse-command-line flags) flags))
+
     (signals error (parse-flags '("--boolflag=")))
-    (signals error (parse-flags '("--boolflag=foobar")))))
+    (signals error (parse-flags '("--boolflag=foobar")))
+    (signals error (parse-flags '("--boolflag" "true")))
+    (signals error (parse-flags '("--boolflag" "false")))
+    (signals error (parse-flags '("--noboolflag" "true")))
+    (signals error (parse-flags '("--noboolflag" "false")))))
 
 (define-flag *keyword-flag* :default-value :foo :selector "keyflag" :type keyword)
 
@@ -112,7 +119,9 @@
     (is (eq *symbol-flag* 'com.google.flag-test::unexported-symbol))
     (signals error (parse-flags '("--symflag=")))
     (signals error (parse-flags '("--symflag" ":bad-colons")))
-    (signals error (parse-flags '("--symflag" "bad-package:foo")))))
+    (signals error (parse-flags '("--symflag" "more:bad:colons")))
+    (signals error (parse-flags '("--symflag" "bad-package:foo")))
+    (signals error (parse-command-line '("--symflag")))))
 
 (define-flag *string-flag* :default-value "foo" :selector "stringflag" :type string)
 
@@ -152,9 +161,9 @@
     (signals error (parse-flags '("--sfflag=-.42d-2")))))
 
 (define-flag *double-float-flag*
-    :default-value 0.12345d0
-    :selector "dfflag"
-    :type (double-float -1d0 1d0))
+  :default-value 0.12345d0
+  :selector "dfflag"
+  :type (double-float -1d0 1d0))
 
 (deftest double-float-flag ()
   (is (= *double-float-flag* 0.12345d0))
@@ -188,6 +197,10 @@
     (signals error (parse-flags '("--color=black")))
     (signals error (parse-flags '("--color=orange")))))
 
+(deftest return-value ()
+  (is (eq '*retval*
+          (eval '(define-flag *retval* :default-value nil :selector "retval" :type symbol)))))
+
 (deftest syntax-errors ()
   (flet ((signals-error (form)
            (signals error (macroexpand-1 form))))
@@ -205,22 +218,12 @@
     (signals-error '(define-flag *s* :default-value t :selector "s" :type symbol :parser nil))
     (signals-error '(define-flag *s* :default-value t :selector "s" :type vector))))
 
-(define-flag *no-go*
-  :default-value nil
-  :selector "nogo"
-  :type boolean)
+(define-flag *no-go* :default-value nil  :selector "nogo" :type boolean)
+(define-flag *rth* :default-value nil :selector "rth" :type boolean)
 
-(define-flag *rth*
-  :default-value nil
-  :selector "rth"
-  :type boolean)
-
-(deftest semantic-errors ()
+(deftest boolean-semantic-errors ()
   (flet ((signals-error (form)
            (signals error (eval form))))
     (signals-error '(define-flag *b* :default-value nil :selector "boolflag" :type boolean))
     (signals-error '(define-flag *go* :default-value nil :selector "go" :type boolean))
     (signals-error '(define-flag *north* :default-value nil :selector "north" :type symbol))))
-
-(deftest return-value ()
-  (eq '*retval* (eval '(define-flag *retval* :default-value nil :selector "retval" :type symbol))))
