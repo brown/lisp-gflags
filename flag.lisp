@@ -31,7 +31,6 @@
 ;;;; Unix command line flag parsing.
 
 (in-package #:com.google.flag)
-(declaim #.*optimize-default*)
 
 ;;; Flag objects hold information needed to parse and set global flags.
 

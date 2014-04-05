@@ -41,7 +41,6 @@
   (:export #:test-flag))
 
 (in-package #:com.google.flag-test)
-(declaim #.*optimize-default*)
 
 (defsuite (test-flag :in root-suite) ()
   (run-child-tests))
