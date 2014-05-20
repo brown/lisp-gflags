@@ -122,10 +122,10 @@
     (signals error (parse-flags '("--symflag" "bad-package:foo")))
     (signals error (parse-command-line '("--symflag")))))
 
-(define-flag *string-flag* :default-value "foo" :selector "stringflag" :type string)
+(define-flag *string-flag* :default-value nil :selector "stringflag" :type (or null string))
 
 (deftest string-flag ()
-  (is (string= *string-flag* "foo"))
+  (is (null *string-flag*))
   (let ((*string-flag* *string-flag*))
     (parse-flags '("--stringflag" "dog"))
     (is (string= *string-flag* "dog"))

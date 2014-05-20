@@ -193,13 +193,14 @@ there is no predefined parser for TYPE-SPECIFIER."
   (declare (type (or symbol cons) type-specifier))
   ;; Return a symbol because our return value is embedded in the compiled FASLs of files that
   ;; contain a DEFINE-FLAG form.  Functions cannot be embedded in FASLs, but symbols can.
-  (cond ((subtypep type-specifier 'boolean) 'parse-boolean)
-        ((subtypep type-specifier 'keyword) 'parse-keyword)
+  (cond ((subtypep type-specifier 'null) nil)
+        ((subtypep type-specifier 'boolean) 'parse-boolean)
+        ((subtypep type-specifier '(or null keyword)) 'parse-keyword)
         ((subtypep type-specifier 'symbol) 'parse-symbol)
-        ((subtypep type-specifier 'string) 'parse-string)
-        ((subtypep type-specifier 'integer) 'parse-integer)
-        ((subtypep type-specifier 'single-float) 'parse-single-float)
-        ((subtypep type-specifier 'double-float) 'parse-double-float)))
+        ((subtypep type-specifier '(or null string)) 'parse-string)
+        ((subtypep type-specifier '(or null integer)) 'parse-integer)
+        ((subtypep type-specifier '(or null single-float)) 'parse-single-float)
+        ((subtypep type-specifier '(or null double-float)) 'parse-double-float)))
 
 ;;; Flag defining macro.
 
