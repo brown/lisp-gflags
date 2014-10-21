@@ -242,23 +242,31 @@ Examples:
       :type (satisfies ip-address-p)
       :parser ip-address-parser
       :help \"An internet protocol address.\")"
-  (unless (symbolp flag-variable) (error "flag variable ~S is not a symbol" flag-variable))
-  (unless default-value-supplied-p
-    (error "no default value specified for flag variable ~S" flag-variable))
-  (unless selector-supplied-p (error "no selector for flag variable ~S" flag-variable))
-  (unless (stringp selector) (error "selector for flag variable ~S is not a string" flag-variable))
-  (when (string= selector "") (error "selector for flag variable ~S is empty" flag-variable))
-  (unless type-supplied-p (error "no type specified for flag variable ~S" flag-variable))
-  (unless (typep type '(or symbol cons))
-    (error "invalid type specified for flag variable ~S " flag-variable))
-  (unless (stringp help) (error "help for flag variable ~S is not a string" flag-variable))
-  (unless (symbolp parser) (error "parser for flag variable ~S is not a symbol" flag-variable))
-  (when (and documentation-supplied-p (not (stringp documentation)))
-    (error "documentation for flag variable ~S is not a string" flag-variable))
+  (assert (symbolp flag-variable)
+          (flag-variable) "flag variable ~S is not a symbol" flag-variable)
+  (assert default-value-supplied-p
+          (flag-variable) "no default value specified for flag variable ~S" flag-variable)
+  (assert selector-supplied-p
+          (selector) "no selector for flag variable ~S" flag-variable)
+  (assert (stringp selector)
+          (selector) "selector for flag variable ~S is not a string" flag-variable)
+  (assert (not (string= selector ""))
+          (selector) "selector for flag variable ~S is empty" flag-variable)
+  (assert type-supplied-p
+          (type) "no type specified for flag variable ~S" flag-variable)
+  (assert (typep type '(or symbol cons))
+          (type) "invalid type specified for flag variable ~S " flag-variable)
+  (assert (stringp help)
+          (help) "help for flag variable ~S is not a string" flag-variable)
+  (assert (symbolp parser)
+          (parser) "parser for flag variable ~S is not a symbol" flag-variable)
+  (assert (or (not documentation-supplied-p) (stringp documentation))
+          (documentation) "documentation for flag variable ~S is not a string" flag-variable)
 
   (let ((documentation (when documentation-supplied-p (list documentation)))
         (parser (if parser-supplied-p parser (flag-parser type))))
-    (unless parser (error "no parser defined for flag variable ~S" flag-variable))
+    (assert parser
+            (parser) "no parser defined for flag variable ~S" flag-variable)
     `(progn
        (eval-when (:compile-toplevel :load-toplevel :execute)
          (declaim (type ,type ,flag-variable))
