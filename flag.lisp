@@ -204,11 +204,8 @@ there is no predefined parser for TYPE-SPECIFIER."
 
 ;;; Flag defining macro.
 
-(defmacro define-flag (flag-variable
+(defmacro define-flag (flag-variable selector default-value type
                        &key
-                         (default-value nil default-value-supplied-p)
-                         (selector nil selector-supplied-p)
-                         (type nil type-supplied-p)
                          (help "")
                          (parser nil parser-supplied-p)
                          (documentation nil documentation-supplied-p))
@@ -229,31 +226,22 @@ and a boolean indicating whether the parse was successful.
 
 Examples:
 
-    (define-flag *debug-mode*
-      :default-value nil
-      :selector \"debug\"
-      :type boolean
+    (define-flag *debug-mode* \"debug\" nil boolean
       :help \"Turn on debugging mode?\"
       :documentation \"Is debugging mode turned on?\")
 
     (define-flag *ip-address*
-      :default-value (make-instance 'ip-address ...)
-      :selector \"ip_address\"
-      :type (satisfies ip-address-p)
+                 \"ip_address\"
+                 (make-instance 'ip-address ...)
+                 (satisfies ip-address-p)
       :parser ip-address-parser
       :help \"An internet protocol address.\")"
   (assert (symbolp flag-variable)
           (flag-variable) "flag variable ~S is not a symbol" flag-variable)
-  (assert default-value-supplied-p
-          (flag-variable) "no default value specified for flag variable ~S" flag-variable)
-  (assert selector-supplied-p
-          (selector) "no selector for flag variable ~S" flag-variable)
   (assert (stringp selector)
           (selector) "selector ~S for flag variable ~S is not a string" selector flag-variable)
   (assert (not (string= selector ""))
           (selector) "empty selector string for flag variable ~S" flag-variable)
-  (assert type-supplied-p
-          (type) "no type specified for flag variable ~S" flag-variable)
   (assert (or (symbolp type) (consp type))
           (type) "invalid type specified for flag variable ~S " flag-variable)
   (assert (stringp help)
@@ -345,6 +333,8 @@ ARGUMENTS, but with all recognized flag arguments removed."
 
 (defun command-line ()
   "Returns the Unix command line as a list of strings."
+  ;; Evantually replace the code below with:
+  ;;(cons (uiop/image:argv0) (uiop/image:command-line-arguments))
   #+allegro (sys:command-line-arguments)
   #+ccl (ccl::command-line-arguments)
   #+sbcl sb-ext:*posix-argv*
