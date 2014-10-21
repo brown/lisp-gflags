@@ -249,12 +249,12 @@ Examples:
   (assert selector-supplied-p
           (selector) "no selector for flag variable ~S" flag-variable)
   (assert (stringp selector)
-          (selector) "selector for flag variable ~S is not a string" flag-variable)
+          (selector) "selector ~S for flag variable ~S is not a string" selector flag-variable)
   (assert (not (string= selector ""))
-          (selector) "selector for flag variable ~S is empty" flag-variable)
+          (selector) "empty selector string for flag variable ~S" flag-variable)
   (assert type-supplied-p
           (type) "no type specified for flag variable ~S" flag-variable)
-  (assert (typep type '(or symbol cons))
+  (assert (or (symbolp type) (consp type))
           (type) "invalid type specified for flag variable ~S " flag-variable)
   (assert (stringp help)
           (help) "help for flag variable ~S is not a string" flag-variable)
