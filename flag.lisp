@@ -145,6 +145,15 @@ successful."
   (declare (type string string))
   (values string t))
 
+(defun parse-int (string)
+  "Parses STRING, which contains the print representation of an integer in base
+10 or base 16, if STRING starts with \"0x\".  Returns two values, the integer
+and a boolean indicating whether the parse was successful."
+  (declare (type string string))
+  (if (or (< (length string) 3) (mismatch string "0x" :end1 2))
+      (parse-integer string)
+      (parse-integer string :start 2 :radix 16)))
+
 (defun valid-float-characters-p (string float-type)
   "Returns true if every character of STRING is one that may be produced when
 printing a FLOAT-TYPE floating point number.  Otherwise, returns false."
@@ -198,7 +207,7 @@ there is no predefined parser for TYPE-SPECIFIER."
         ((subtypep type-specifier '(or null keyword)) 'parse-keyword)
         ((subtypep type-specifier 'symbol) 'parse-symbol)
         ((subtypep type-specifier '(or null string)) 'parse-string)
-        ((subtypep type-specifier '(or null integer)) 'parse-integer)
+        ((subtypep type-specifier '(or null integer)) 'parse-int)
         ((subtypep type-specifier '(or null single-float)) 'parse-single-float)
         ((subtypep type-specifier '(or null double-float)) 'parse-double-float)))
 

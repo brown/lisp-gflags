@@ -131,7 +131,7 @@
     (parse-flags '("--stringflag="))
     (is (string= *string-flag* ""))))
 
-(define-flag *integer-flag* "intflag" 10 (integer -10 10))
+(define-flag *integer-flag* "intflag" 10 (integer -20 20))
 
 (deftest integer-flag ()
   (is (= *integer-flag* 10))
@@ -140,8 +140,12 @@
     (is (= *integer-flag* -2))
     (parse-flags '("--intflag=3"))
     (is (= *integer-flag* 3))
+    (parse-flags '("--intflag=0xf"))
+    (is (= *integer-flag* #xf))
     (signals error (parse-flags '("--intflag=")))
-    (signals error (parse-flags '("--intflag=123x456")))))
+    (signals error (parse-flags '("--intflag=123x456")))
+    (signals error (parse-flags '("--intflag=#b111")))
+    (signals error (parse-flags '("--intflag=#xfeedface")))))
 
 (define-flag *single-float-flag* "sfflag" 3.14f0 single-float)
 
