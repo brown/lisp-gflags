@@ -146,9 +146,9 @@ successful."
   (values string t))
 
 (defun parse-int (string)
-  "Parses STRING, which contains the print representation of an integer in base
-10 or base 16, if STRING starts with \"0x\".  Returns two values, the integer
-and a boolean indicating whether the parse was successful."
+  "Parses STRING, a decimal or hexadecimal representation of an integer.
+Returns two values, the integer and a boolean indicating whether the parse was
+successful.  STRING is parsed as hexadecimal if it starts with \"0x\"."
   (declare (type string string))
   (if (or (< (length string) 3) (mismatch string "0x" :end1 2))
       (parse-integer string)
