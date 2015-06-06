@@ -31,7 +31,7 @@
 (defsystem com.google.flag-test
   :name "Lisp gflags test"
   :description "Test code for package COM.GOOGLE.FLAG."
-  :version "1.5"
+  :version "1.6"
   :author "Robert Brown"
   :license "New BSD license.  See the copyright messages in individual files."
   :depends-on (com.google.flag hu.dwim.stefil)
