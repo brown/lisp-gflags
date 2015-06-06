@@ -32,7 +32,7 @@
   :name "Lisp gflags"
   :description "Unix command line flag parsing."
   :long-description "An implementation of Google's gflags command line flag parsing library."
-  :version "1.5"
+  :version "1.6"
   :author "Robert Brown"
   :license "New BSD license.  See the copyright messages in individual files."
   :depends-on (com.google.base)

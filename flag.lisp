@@ -177,9 +177,9 @@ the parse was successful."
                      (let ((*read-default-float-format* expected-type)
                            (*read-eval* nil))
                        (ignore-errors (read-from-string string))))))
-        (if (typep float expected-type)
-            (values float t)
-            (values nil nil)))))
+        (cond ((typep float expected-type) (values float t))
+              ((integerp float) (values (coerce float expected-type) t))
+              (t (values nil nil))))))
 
 (defun parse-single-float (string)
   "Parses STRING, which represents a single precision floating point value.
