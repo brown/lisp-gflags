@@ -26,7 +26,7 @@
 ;;;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ;;;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;;; Author: brown@google.com (Robert Brown)
+;;;; Author: Robert Brown <robert.brown@gmail.com>
 
 ;;;; Unix command line flag parsing.
 
@@ -75,10 +75,10 @@ value and a boolean indicating whether the parse was successful.")
 (defun validate-flag (flag selector)
   "Validates whether a FLAG associated with SELECTOR can be registered without
 causing any flag parsing problems."
-  ;; The flag can be redefined so long as its variable does not change.
   (declare (type flag flag)
            (type string selector))
   (let ((old-flag (find-flag selector)))
+    ;; A flag can be redefined so long as its variable does not change.
     (when (and old-flag (not (eq (flag-variable old-flag) (flag-variable flag))))
       (error "a flag with selector ~S is already associated with variable ~S"
              selector (flag-variable old-flag))))
