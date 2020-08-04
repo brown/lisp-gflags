@@ -32,7 +32,7 @@
   :name "Lisp gflags"
   :description "Unix command line flag parsing."
   :long-description "An implementation of Google's gflags command line flag parsing library."
-  :version "1.6"
+  :version "1.7"
   :author "Robert Brown <robert.brown@gmail.com>"
   :license "New BSD license.  See the copyright messages in individual files."
   :depends-on (com.google.base)
@@ -44,7 +44,7 @@
 (defsystem com.google.flag/test
   :name "Lisp gflags test"
   :description "Test code for package COM.GOOGLE.FLAG."
-  :version "1.6"
+  :version "1.7"
   :author "Robert Brown <robert.brown@gmail.com>"
   :license "New BSD license.  See the copyright messages in individual files."
   :depends-on (com.google.flag hu.dwim.stefil)

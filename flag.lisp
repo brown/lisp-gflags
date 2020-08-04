@@ -354,7 +354,14 @@ ARGUMENTS, but with all recognized flag arguments removed."
 
 (defun command-line ()
   "Returns the Unix command line as a list of strings."
+  #+abcl ext:*command-line-argument-list*
   #+allegro (sys:command-line-arguments)
-  #+ccl (ccl::command-line-arguments)
+  #+(or clasp ecl) (loop :for i :from 0 :below (si:argc) :collect (si:argv i))
+  #+clisp (coerce (ext:argv) 'list)
+  #+clozure ccl:*command-line-argument-list*
+  #+(or cmucl scl) extensions:*command-line-strings*
+  #+gcl si:*command-args*
+  #+lispworks sys:*line-arguments-list*
   #+sbcl sb-ext:*posix-argv*
-  #-(or allegro ccl sbcl) (error "not implemented"))
+  #-(or abcl allegro clasp clisp clozure cmucl ecl gcl lispworks sbcl scl)
+  (error "not implemented"))
