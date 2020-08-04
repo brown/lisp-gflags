@@ -33,10 +33,23 @@
   :description "Unix command line flag parsing."
   :long-description "An implementation of Google's gflags command line flag parsing library."
   :version "1.6"
-  :author "Robert Brown"
+  :author "Robert Brown <robert.brown@gmail.com>"
   :license "New BSD license.  See the copyright messages in individual files."
   :depends-on (com.google.base)
-  :in-order-to ((test-op (test-op com.google.flag-test)))
+  :in-order-to ((test-op (test-op com.google.flag/test)))
   :components
   ((:file "package")
    (:file "flag" :depends-on ("package"))))
+
+(defsystem com.google.flag/test
+  :name "Lisp gflags test"
+  :description "Test code for package COM.GOOGLE.FLAG."
+  :version "1.6"
+  :author "Robert Brown <robert.brown@gmail.com>"
+  :license "New BSD license.  See the copyright messages in individual files."
+  :depends-on (com.google.flag hu.dwim.stefil)
+  :components
+  ((:file "flag-test")))
+
+(defmethod perform ((operation test-op) (component (eql (find-system 'com.google.flag/test))))
+  (symbol-call 'com.google.flag-test 'test-flag))
