@@ -2,8 +2,9 @@
 
 Lisp gflags is a Common Lisp implementation of gflags, Google's command line
 flag parsing library.  The library implements functionality similar to that of
-Google's [C++ gflags library](http://github.com/gflags/gflags/) and [Python
-gflags library](http://github.com/abseil/abseil-py/).
+Google's [C++ gflags library](http://github.com/gflags/gflags/) and the
+[`absl.flags` module](https://abseil.io/docs/python/guides/flags) in Google's
+[Python Abseil libraries](http://github.com/abseil/abseil-py/).
 
 The code allows you to define command line flags using the `DEFINE-FLAG` macro.
 For instance, the following form defines a boolean flag called `*DEBUG-FLAG*`
